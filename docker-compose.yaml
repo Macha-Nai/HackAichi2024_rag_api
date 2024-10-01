@@ -1,0 +1,56 @@
+version: "3.4"
+services:
+  db:
+    image: ankane/pgvector:v0.5.1
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+    networks:
+      - fastapi_network
+
+  api:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: development
+      cache_from:
+        - us.gcr.io/kubernetes-dev/vectorapi:latest
+    volumes:
+      - ./vectorapi:/app/vectorapi
+      - ./tests:/app/tests
+      - ./scripts:/app/scripts
+      - ./docs:/app/docs
+      - ./.sentence_transformers:/app/.sentence_transformers
+    networks:
+      fastapi_network:
+        aliases:
+          - rag_api-api-1
+    environment:
+      DEFAULT_EMBEDDING_MODEL: BAAI/bge-small-en-v1.5
+      POSTGRES_HOST: db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+      VECTORAPI_STORE_SCHEMA: vector
+      ECHO_SQL: true
+      PORT: 8889
+    env_file:
+      - ./vectorapi/.env
+    ports:
+      - 8889:8889
+    depends_on:
+      - db
+
+networks:
+  default:
+    external:
+      name: bridge
+  fastapi_network:
+    name: fastapi_network
+    driver: bridge
+    external: true

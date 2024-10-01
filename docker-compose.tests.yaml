@@ -1,0 +1,9 @@
+version: "3.4"
+services:
+  db:
+    ports: !reset []
+  api:
+    command: ["pytest", "-m", "integration", "--integration"]
+    environment:
+      VECTORAPI_STORE_SCHEMA: test_schema
+    ports: !reset []
